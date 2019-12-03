@@ -25,18 +25,16 @@ def _crop_image(image, label):
     image_tensor = tf.stack([image, label], axis=0)
     combined_images = tf.image.random_crop(image_tensor, size = [2, CROP_HEIGHT, CROP_WIDTH, CHANNELS])
     return tf.unstack(combined_images, num=2, axis=0)    
-
-def _random_hue(image, label):
-    return tf.image.random_hue(image, max_delta=0.3), label
-
-def _random_brightness(image, label):     
-    return tf.image.random_brightness(image, max_delta=0.3), label
     
+def _flip_image(image, label):   
+    image_tensor = tf.stack([image, label], axis=0)
+    combined_images = tf.image.random_flip_left_right(tf.image.random_flip_up_down(image_tensor))
+    return tf.unstack(combined_images, num=2, axis=0)
+
 def _prepare_datasets(file_list):
     image_dataset = tf.data.TFRecordDataset(file_list)
     return image_dataset.map(_parse_features).map(_crop_image)\
-                        .map(_random_brightness).map(_random_hue)\
-                        .batch(batch_size=BATCH_SIZE).cache()\
+                        .map(_flip_image).batch(batch_size=BATCH_SIZE).cache()\
                         .shuffle(buffer_size=BUFFER_SIZE).repeat()\
                         .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
